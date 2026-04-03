@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa mental de app bancaria</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://gojs.net/latest/release/go.js"></script>
+</head>
+
+<body>
+    <h1>Mapa Mental: De la percepción del usuario al sistema</h1>
+    <p>Haz clic en el botón para alternar entre el modelo mental y el modelo conceptual del sistema bancario.</p>
+    <div id="diagram-container"></div>
+    <div id="controls">
+        <button id="toggleButton">Ver modelo conceptual del sistema</button>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box user-color"></div>
+                <span>Modelo mental de usuario</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box system-color"></div>
+                <span>Modelo conceptual del sistema</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Paso 1: Inicializacion del diagrama
+        // Se asegura de que el script se ejecute después de que el documento HTML esté completamente cargado
+        document.addEventListener("DOMContentLoaded", () => {
+            const $ = go.GraphObject.make; // Atajo para crear objetos GoJS
+            let diagram = $(go.Diagram, "diagram-container", {
+                //Utiliza un TreeLayout para una estructura de mapa mental clara
+                layout: $(go.TreeLayout, { angle: 90, nodeSpacing: 50, layerSpacing: 80 }),
+                "undoManager.isEnabled": true // Habilita la funcionalidad de deshacer/rehacer
+            });
+
+            // Paso 2: Definicion de la plantilla de los nodos
+            // Un "Node" representa un concepto o paso en el mapa mental.
+            diagram.nodeTemplate =
+                $(go.Node, "Auto",
+                    {
+                        toolTip: $(go.Adornment, "Auto", $(go.Shape, { fill: "#2D2D2D" }), $(go.TextBlock,
+                            { margin: 5, stroke: "white" }, new go.Binding("text", "tooltip")))
+                    },
+                    $(go.Shape, "RoundedRectangle", {
+                        strokeWidth: 2,
+                        stroke: null,
+                        portId: "",//Permite enlaces a/desde el nodo.
+                    }, new go.Binding("fill", "color")),
+                    $(go.TextBlock, {
+                        margin: 10,
+                        stroke: "#ffffff",
+                        font: "16px sans-serif",
+                        wrap: go.TextBlock.WrapFit,
+                        textAlign: "center"
+                    }, new go.Binding("text", "text"))
+                );
+            // Paso 3: Definicion de la plantilla de los enlaces
+            // Un "Link" conecta los nodos para mostrar la relacion.
+            diagram.linkTemplate =
+                $(go.Link, {
+                    routing: go.Link.Orthogonal,
+                    corner: 10
+                },
+                    $(go.Shape, { strokeWidth: 2, stroke: "#777" }),
+                    $(go.Shape, { toArrow: "Standard", fill: "#777", stroke: null })
+                );
+            // Paso 4: Creación de los datos para el modelo de Delivery
+            // Modelo mental del usuario (Lo que el cliente "ve" y espera)
+            const userMentalModel = {
+                nodes: [
+                    { key: "open_app", text: "Abrir App", color: "#4CAF50", tooltip: "El usuario entra buscando comida." },
+                    { key: "search", text: "Buscar Restaurante", color: "#4CAF50", tooltip: "Elige lo que se le antoja." },
+                    { key: "choose_food", text: "Elegir Comida", color: "#4CAF50", tooltip: "Añade platos al carrito de forma simple." },
+                    { key: "pay", text: "Pagar", color: "#4CAF50", tooltip: "Presiona un botón y el dinero 'se envía'." },
+                    { key: "wait", text: "Esperar Comida", color: "#4CAF50", tooltip: "El usuario solo espera a que suene el timbre." }
+                ],
+                links: [
+                    { from: "open_app", to: "search" },
+                    { from: "search", to: "choose_food" },
+                    { from: "choose_food", to: "pay" },
+                    { from: "pay", to: "wait" }
+                ]
+            };
+
+            // Modelo conceptual del sistema (La complejidad técnica del delivery)
+            const systemConceptualModel = {
+                nodes: [
+                    { key: "auth", text: "Autenticación", color: "#F44336", tooltip: "Verifica token de sesión y perfil." },
+                    { key: "geo", text: "Geolocalización", color: "#F44336", tooltip: "Filtra restaurantes por radio de cobertura GPS." },
+                    { key: "db_menu", text: "Consulta DB Menús", color: "#F44336", tooltip: "Recupera platos, precios y disponibilidad en tiempo real." },
+                    { key: "cart_mgmt", text: "Gestión de Carrito", color: "#F44336", tooltip: "Cálculo de impuestos, propinas y costos de envío." },
+                    { key: "payment_gateway", text: "Pasarela de Pagos", color: "#F44336", tooltip: "Validación con procesador externo (Visa/Mastercard)." },
+                    { key: "order_sent", text: "Envío al Restaurante", color: "#F44336", tooltip: "Notificación al sistema del comercio (POS)." },
+                    { key: "courier_assign", text: "Asignación de Repartidor", color: "#F44336", tooltip: "Algoritmo busca al repartidor más cercano disponible." },
+                    { key: "real_time_track", text: "Seguimiento Real-Time", color: "#F44336", tooltip: "Streaming de coordenadas GPS cada n segundos." },
+                    { key: "push_notif", text: "Sistema de Notificaciones", color: "#F44336", tooltip: "Envío de alertas Push (Aceptado, Preparando, En camino)." },
+                    { key: "delivery_conf", text: "Confirmación de Entrega", color: "#F44336", tooltip: "Cierre de orden y liberación de pago al comercio." }
+                ],
+                links: [
+                    { from: "auth", to: "geo" },
+                    { from: "geo", to: "db_menu" },
+                    { from: "db_menu", to: "cart_mgmt" },
+                    { from: "cart_mgmt", to: "payment_gateway" },
+                    { from: "payment_gateway", to: "order_sent" },
+                    { from: "order_sent", to: "courier_assign" },
+                    { from: "courier_assign", to: "real_time_track" },
+                    { from: "real_time_track", to: "push_notif" },
+                    { from: "push_notif", to: "delivery_conf" }
+                ]
+            };
+            // Paso 5: Funcion para alternar entre los modelos
+            let isUserView = true; // Estado inicial: mostrando el modelo mental del usuario
+            const toggleButton = document.getElementById("toggleButton");
+            const diagramContainer = document.getElementById("diagram-container");
+
+            const updateDiagram = () => {
+                diagram.model = new go.GraphLinksModel(
+                    isUserView ? userMentalModel.nodes : systemConceptualModel.nodes,
+                    isUserView ? userMentalModel.links : systemConceptualModel.links
+                );
+                diagram.centerRect(diagram.documentBounds); // Centra el diagrama después de actualizar el modelo
+            };
+
+            //Paso 6: Establecere el modelo inicial
+            //el diagrama comienza mostrando el modelo mental del usuario
+            updateDiagram();
+
+            // Paso 7: Agregar el evento de clic al botón 
+            toggleButton.addEventListener("click", () => {
+                isUserView = !isUserView; // Alterna el estado
+                updateDiagram(); // Actualiza el diagrama con el nuevo modelo
+                toggleButton.textContent = isUserView ? "Ver modelo conceptual del sistema" : "Ver modelo mental del usuario"; // Actualiza el texto del botón
+            });
+        })
+
+    </script>
+</body>
+
+</html>
